@@ -8,15 +8,11 @@ const Authorization = `Basic ${Buffer.from(`${process.env.RESTkey}:${process.env
 app.get("/", (req, res) => res.send("Agora Cloud Recording Server"));
 
 app.post("/acquire", async (req, res) => {
-  const appID = process.env.appID;
-  const channel = req.body.channel;
-  const uid = req.body.uid;
-
   const acquire = await axios.post(
-    `https://api.agora.io/v1/apps/${appID}/cloud_recording/acquire`,
+    `https://api.agora.io/v1/apps/${process.env.appID}/cloud_recording/acquire`,
     {
-      cname: channel,
-      uid: uid,
+      cname: req.body.channel,
+      uid: req.body.uid,
       clientRequest: {
         resourceExpiredHour: 24,
       },
@@ -29,49 +25,46 @@ app.post("/acquire", async (req, res) => {
 
 app.post("/start", async (req, res) => {
   const appID = process.env.appID;
-  const channel = req.body.channel;
-  const uid = req.body.uid;
   const resource = req.body.resource;
   const mode = req.body.mode;
 
-  axios
-    .post(
-      `https://api.agora.io/v1/apps/${appID}/cloud_recording/resourceid/${resource}/mode/${mode}/start`,
-      {
-        cname: req.body.channel,
-        uid: req.body.uid,
-        clientRequest: {
-          recordingConfig: {
-            maxIdleTime: 30,
-            streamTypes: 2,
-            channelType: 0,
-            videoStreamType: 0,
-            transcodingConfig: {
-              height: 640,
-              width: 360,
-              bitrate: 500,
-              fps: 15,
-              mixedVideoLayout: 1,
-              backgroundColor: "#FFFFFF",
-            },
-          },
-          recordingFileConfig: {
-            avFileType: ["hls"],
-          },
-          storageConfig: {
-            vendor: 1,
-            region: 2,
-            bucket: process.env.bucket,
-            accessKey: process.env.accessKey,
-            secretKey: process.env.secretKey,
-            fileNamePrefix: ["directory1", "directory2"],
+  const start = await axios.post(
+    `https://api.agora.io/v1/apps/${appID}/cloud_recording/resourceid/${resource}/mode/${mode}/start`,
+    {
+      cname: req.body.channel,
+      uid: req.body.uid,
+      clientRequest: {
+        recordingConfig: {
+          maxIdleTime: 30,
+          streamTypes: 2,
+          channelType: 0,
+          videoStreamType: 0,
+          transcodingConfig: {
+            height: 640,
+            width: 360,
+            bitrate: 500,
+            fps: 15,
+            mixedVideoLayout: 1,
+            backgroundColor: "#FFFFFF",
           },
         },
+        recordingFileConfig: {
+          avFileType: ["hls"],
+        },
+        storageConfig: {
+          vendor: 1,
+          region: 2,
+          bucket: process.env.bucket,
+          accessKey: process.env.accessKey,
+          secretKey: process.env.secretKey,
+          fileNamePrefix: ["directory1", "directory2"],
+        },
       },
-      { headers: { Authorization } }
-    )
-    .then((response) => res.send(response.data))
-    .catch((error) => res.send(error));
+    },
+    { headers: { Authorization } }
+  );
+
+  res.send(start.data);
 });
 
 app.post("/stop", async (req, res) => {
@@ -80,21 +73,16 @@ app.post("/stop", async (req, res) => {
   const sid = req.body.sid;
   const mode = req.body.mode;
 
-  const channel = req.body.channel;
-  const uid = req.body.uid;
-
-  axios
-    .post(
-      `https://api.agora.io/v1/apps/${appID}/cloud_recording/resourceid/${resource}/sid/${sid}/mode/${mode}/stop`,
-      {
-        cname: channel,
-        uid: uid,
-        clientRequest: {},
-      },
-      { headers: { Authorization } }
-    )
-    .then((response) => res.send(response.data))
-    .catch((error) => res.send(error));
+  const stop = await axios.post(
+    `https://api.agora.io/v1/apps/${appID}/cloud_recording/resourceid/${resource}/sid/${sid}/mode/${mode}/stop`,
+    {
+      cname: req.body.channel,
+      uid: req.body.uid,
+      clientRequest: {},
+    },
+    { headers: { Authorization } }
+  );
+  res.send(stop.data);
 });
 
 const port = process.env.PORT || 3000;
